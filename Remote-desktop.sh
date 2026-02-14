@@ -9,8 +9,14 @@ else
     echo "3389端口未监听，开始安装xrdp..."
     
     # 第二步：更新系统并安装桌面环境和xrdp
-    sudo apt update && sudo apt upgrade -y
-    sudo apt install xfce4 xfce4-goodies xrdp -y
+    # 设置环境变量，避免配置文件冲突时的交互弹窗
+    export DEBIAN_FRONTEND=noninteractive
+    
+    sudo apt update && sudo apt upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+    sudo apt install xfce4 xfce4-goodies xrdp -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+    
+    # 恢复环境变量
+    unset DEBIAN_FRONTEND
     
     # 第三步：启动xrdp并设置开机自启
     sudo systemctl enable xrdp
