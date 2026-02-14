@@ -35,43 +35,80 @@ retry_run() {
     exit 1
 }
 
+# 交互式创建普通用户函数
+create_normal_user() {
+    log "INFO" "===== 开始创建远程桌面普通用户 ====="
+    # 提示输入用户名
+    read -p "请输入要创建的普通用户名（例如：ubuntu_user）：" USER_NAME
+    # 校验用户名是否为空
+    if [ -z "$USER_NAME" ]; then
+        log "ERROR" "用户名不能为空！"
+        exit 1
+    fi
+    # 检查用户是否已存在
+    if id "$USER_NAME" &>/dev/null; then
+        log "WARN" "用户 $USER_NAME 已存在，跳过创建步骤"
+        return 0
+    fi
+    # 交互式创建用户（会提示输入密码）
+    log "INFO" "请为用户 $USER_NAME 设置密码（输入时无回显，按提示操作）"
+    sudo adduser "$USER_NAME"
+    # 将用户添加到sudo组（可选，赋予管理员权限）
+    read -p "是否将用户 $USER_NAME 添加到sudo组（拥有管理员权限）？(y/n)：" ADD_SUDO
+    if [ "$ADD_SUDO" = "y" ] || [ "$ADD_SUDO" = "Y" ]; then
+        sudo usermod -aG sudo "$USER_NAME"
+        log "INFO" "用户 $USER_NAME 已添加到sudo组"
+    fi
+    # 为用户配置xrdp桌面会话
+    log "INFO" "为用户 $USER_NAME 配置xfce4桌面会话"
+    sudo -u "$USER_NAME" bash -c 'echo "xfce4-session" > ~/.xsession'
+    log "INFO" "用户 $USER_NAME 创建并配置完成！"
+    log "SUCCESS" "远程桌面登录信息："
+    log "SUCCESS" "用户名：$USER_NAME"
+    log "SUCCESS" "密码：你刚才设置的密码"
+}
+
 # ===================== 主程序 =====================
+# 检查root权限
 if [ $EUID -ne 0 ]; then
     log "ERROR" "请使用root权限运行此脚本 (sudo ./脚本名.sh)"
     exit 1
 fi
 
+# 初始化日志
 echo "===== XRDP安装脚本日志 - 开始时间: $(date +"%Y-%m-%d %H:%M:%S") =====" > $LOG_FILE
 log "INFO" "XRDP安装脚本启动"
 
+# 检查3389端口
 log "INFO" "检查$TARGET_PORT端口状态"
 if ss -tulpn | grep -q ":$TARGET_PORT"; then
-    log "INFO" "$TARGET_PORT端口已被监听，脚本退出"
+    log "INFO" "$TARGET_PORT端口已被监听，跳过安装步骤"
+    # 端口已监听时，仍提示创建用户
+    create_normal_user
     exit 0
 else
     log "INFO" "$TARGET_PORT端口未监听，开始安装流程"
 fi
 
+# 非交互模式安装依赖
 export DEBIAN_FRONTEND=noninteractive
 log "INFO" "设置系统为非交互模式，自动处理配置文件冲突"
 
+# 更新源+安装软件
 retry_run "apt update -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold'" "更新软件源"
 retry_run "apt upgrade -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold'" "系统软件包升级"
 retry_run "apt install xfce4 xfce4-goodies xrdp -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold'" "安装xfce4和xrdp"
 
+# 恢复交互模式
 unset DEBIAN_FRONTEND
 log "INFO" "恢复系统交互模式"
 
-# 新增：配置xfce4桌面会话（关键！解决黑屏问题）
-log "INFO" "配置xfce4桌面会话"
-retry_run "echo 'xfce4-session' > /home/$SUDO_USER/.xsession" "写入桌面会话配置"
-# 给普通用户权限（避免权限问题）
-retry_run "chown $SUDO_USER:$SUDO_USER /home/$SUDO_USER/.xsession" "设置会话文件权限"
-
+# 启动并配置xrdp服务
 log "INFO" "配置xrdp服务自启并启动"
 retry_run "systemctl enable xrdp" "设置xrdp开机自启"
 retry_run "systemctl restart xrdp" "重启xrdp服务（加载新配置）"
 
+# 检查xrdp状态
 if systemctl is-active --quiet xrdp; then
     log "INFO" "xrdp服务运行正常"
 else
@@ -79,6 +116,7 @@ else
     exit 1
 fi
 
+# 防火墙配置
 log "INFO" "检查UFW防火墙状态"
 if ufw status | grep -q "active"; then
     retry_run "ufw allow $TARGET_PORT/tcp" "放行$TARGET_PORT端口"
@@ -88,12 +126,20 @@ else
     log "INFO" "UFW防火墙未启用，跳过端口放行"
 fi
 
+# 创建远程桌面普通用户（核心交互环节）
+create_normal_user
+
+# 最终检查端口
 log "INFO" "最终检查$TARGET_PORT端口监听状态"
 if ss -tulpn | grep -q ":$TARGET_PORT"; then
-    log "SUCCESS" "===== XRDP安装配置完成！====="
-    log "SUCCESS" "远程桌面端口: $TARGET_PORT"
-    log "SUCCESS" "服务器IP: $(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
-    log "SUCCESS" "直接用Windows远程桌面连接即可，使用当前Ubuntu用户名密码登录"
+    SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+    log "SUCCESS" "===== XRDP安装配置全完成！====="
+    log "SUCCESS" "远程桌面连接信息："
+    log "SUCCESS" "服务器IP：$SERVER_IP"
+    log "SUCCESS" "端口：$TARGET_PORT"
+    log "SUCCESS" "用户名：$USER_NAME（你刚才创建的）"
+    log "SUCCESS" "密码：你刚才设置的密码"
+    log "SUCCESS" "直接用Windows远程桌面连接即可！"
     log "SUCCESS" "日志文件路径: $LOG_FILE"
 else
     log "ERROR" "===== XRDP安装失败！====="
