@@ -17,6 +17,8 @@ curl -sSL https://raw.githubusercontent.com/你的用户名/仓库名/main/remot
 
 # 方法B：用wget（如果curl没装）
 wget -qO- https://raw.githubusercontent.com/你的用户名/仓库名/main/remote-desktop.sh | bash
+wget -qO- https://raw.githubusercontent.com/guowangl365/Remote-desktop-System-Config/main/Remote-desktop.sh | bash
+
 -sSL/-qO-：静默模式，避免多余输出；
 | bash：把拉取到的脚本内容直接传给 bash 执行。
 方法 2：先下载再执行（更安全，可先检查脚本）
