@@ -1,0 +1,42 @@
+你现在已经成功进入了 xrdp 的登录界面，接下来按以下步骤操作即可：
+
+1.  **输入登录信息**
+    -   **Session**：保持默认的 `Xorg` 即可。
+    -   **username**：建议使用普通用户（如你之前创建的用户），而不是 `root`，因为默认配置下 `root` 远程登录可能被限制。
+    -   **password**：输入对应用户的密码。
+
+2.  **点击 OK 登录**
+    如果配置正确，你将看到 xfce4 桌面环境。
+
+---
+
+### 如果登录后出现黑屏/闪退，按以下步骤排查：
+
+1.  **检查 `.xsession` 配置**
+    确保对应用户的家目录下存在 `.xsession` 文件，且内容为 `xfce4-session`：
+    ```bash
+    cat /home/你的用户名/.xsession
+    ```
+    如果不存在，手动创建：
+    ```bash
+    echo "xfce4-session" > /home/你的用户名/.xsession
+    chown 你的用户名:你的用户名 /home/你的用户名/.xsession
+    sudo systemctl restart xrdp
+    ```
+
+2.  **检查 xrdp 日志**
+    查看详细错误信息：
+    ```bash
+    tail -f /var/log/xrdp.log
+    ```
+
+3.  **允许 root 登录（可选）**
+    如果你确实需要用 `root` 登录，需要修改 xrdp 配置：
+    ```bash
+    echo "allowed_users=anybody" >> /etc/xrdp/XRDP.ini
+    sudo systemctl restart xrdp
+    ```
+
+---
+
+你现在可以先尝试用普通用户登录，如果遇到问题，我可以帮你进一步排查。需要我帮你排查登录后的黑屏问题吗？
