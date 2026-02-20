@@ -167,7 +167,7 @@ main
 ## 使用方法
 ### 1. 一键运行（推荐）
 ```bash
-sudo wget -O ubuntu-wine-game-setup.sh https://raw.githubusercontent.com/你的用户名/ubuntu-wine-game-setup/main/ubuntu-wine-game-setup.sh && sudo chmod +x ubuntu-wine-game-setup.sh && sudo ./ubuntu-wine-game-setup.sh
+sudo wget -O ubuntu-wine-game-setup.sh https://raw.githubusercontent.com/guowangl365/Remote-desktop-System-Config/main/ubuntu-wine-game-setup.sh && sudo chmod +x ubuntu-wine-game-setup.sh && sudo ./ubuntu-wine-game-setup.sh
 ```
 
 ### 2. 手动下载运行
