@@ -19,7 +19,7 @@ curl -sSL https://raw.githubusercontent.com/你的用户名/仓库名/main/remot
 wget -qO- https://raw.githubusercontent.com/你的用户名/仓库名/main/remote-desktop.sh | bash
 wget -qO- https://raw.githubusercontent.com/guowangl365/Remote-desktop-System-Config/main/Remote-desktop.sh | bash
 sudo wget -O ubuntu-wine-game-setup.sh https://raw.githubusercontent.com/guowangl365/Remote-desktop-System-Config/main/ubuntu-wine-game-setup.sh && sudo chmod +x ubuntu-wine-game-setup.sh && sudo ./ubuntu-wine-game-setup.sh
-curl -O https://raw.githubusercontent.com/guowangl365/Remote-desktop-System-Config/main/android-studio-auto-setup.sh
+curl -o android-studio-auto-setup.sh https://raw.githubusercontent.com/guowangl365/Remote-desktop-System-Config/main/android-studio-auto-setup.sh && chmod +x android-studio-auto-setup.sh && sudo ./android-studio-auto-setup.sh
 
 -sSL/-qO-：静默模式，避免多余输出；
 | bash：把拉取到的脚本内容直接传给 bash 执行。
